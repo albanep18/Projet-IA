@@ -1,17 +1,15 @@
 package awale;
 
-import awaleTest.Strategies;
-
-public class Joueur {
+public class Joueur implements Strategie{
 	private String nom;
 	private boolean estJoueur1;
-	private Strategies strategies;
+	private Strategie strategie;
 	private int score;
 
-	public Joueur(String nom, boolean estJoueur1, Strategies strategies) {
+	public Joueur(String nom, boolean estJoueur1, Strategie strategie) {
 		this.nom = nom;
 		this.estJoueur1 = estJoueur1;
-		this.strategies = strategies;
+		this.strategie = strategie;
 		this.score = 0;
 	}
 
@@ -23,8 +21,8 @@ public class Joueur {
 		return estJoueur1;
 	}
 
-	public Strategies getStrategie() {
-		return strategies;
+	public Strategie getStrategie() {
+		return strategie;
 	}
 
 	public int getScore() {
@@ -35,3 +33,4 @@ public class Joueur {
 		score += points;
 	}
 }
+
