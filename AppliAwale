@@ -1,0 +1,230 @@
+package awale;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Random;
+import javax.swing.*;
+
+public class AppliAwale {
+
+    private JFrame frame;
+
+    // état jeu
+    private Awale jeu;
+    private Joueur j1, j2;
+    private boolean tourJ1;
+    private JButton[] trous;
+    private JLabel lblScore;
+
+    // choix utilisateur
+    private boolean mode50Parties;
+    private Strategie stratJ1, stratJ2;
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                AppliAwale window = new AppliAwale();
+                window.frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public AppliAwale() {
+        initialize();
+        afficherMenuMode();
+    }
+
+    private void initialize() {
+        frame = new JFrame("Awalé");
+        frame.setBounds(100, 100, 800, 400);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+    }
+
+    /* =========================
+       ÉCRAN 1 : MENU MODE
+       ========================= */
+    private void afficherMenuMode() {
+        JPanel panel = new JPanel(new GridLayout(4, 1, 10, 10));
+
+        JLabel titre = new JLabel("Awalé - Choix du mode", SwingConstants.CENTER);
+        titre.setFont(new Font("Arial", Font.BOLD, 18));
+        panel.add(titre);
+
+        JRadioButton rb50 = new JRadioButton("Tester 50 parties (automatique)");
+        JRadioButton rb1 = new JRadioButton("Jouer une partie");
+
+        ButtonGroup group = new ButtonGroup();
+        group.add(rb50);
+        group.add(rb1);
+        rb1.setSelected(true);
+
+        panel.add(rb50);
+        panel.add(rb1);
+
+        JButton btn = new JButton("Continuer");
+        btn.addActionListener(e -> {
+            mode50Parties = rb50.isSelected();
+            afficherChoixStrategie();
+        });
+        panel.add(btn);
+
+        frame.setContentPane(panel);
+        frame.revalidate();
+    }
+
+    /* =========================
+       ÉCRAN 2 : CHOIX STRATÉGIES
+       ========================= */
+    private void afficherChoixStrategie() {
+        JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
+
+        panel.add(new JLabel("Stratégie Joueur 1"));
+        JComboBox<String> cbJ1 = new JComboBox<>(nomsStrategies());
+        panel.add(cbJ1);
+
+        panel.add(new JLabel("Stratégie Joueur 2"));
+        JComboBox<String> cbJ2 = new JComboBox<>(nomsStrategies());
+        panel.add(cbJ2);
+
+        JButton btn = new JButton("Lancer");
+        btn.addActionListener(e -> {
+            stratJ1 = creerStrategie(cbJ1.getSelectedItem().toString());
+            stratJ2 = creerStrategie(cbJ2.getSelectedItem().toString());
+
+            if (mode50Parties) lancer50Parties();
+            else afficherJeu();
+        });
+
+        panel.add(new JLabel());
+        panel.add(btn);
+
+        frame.setContentPane(panel);
+        frame.revalidate();
+    }
+
+    private String[] nomsStrategies() {
+        return new String[]{
+                "Humain",
+                "Random",
+                "Greedy",
+                "Heuristique",
+                "HeuristiqueProf",
+                "MCTS"
+        };
+    }
+
+    private Strategie creerStrategie(String nom) {
+        switch (nom) {
+            case "Random": return new RandomPlayer();
+            case "Greedy": return new GreedyBestFirst();
+            case "Heuristique": return new FonctionHeuristique();
+            case "HeuristiqueProf": return new FonctionHeuristiqueProf();
+            case "MCTS": return new MCTSStrategie();
+            default: return null; // Humain
+        }
+    }
+
+    /* =========================
+       MODE 50 PARTIES
+       ========================= */
+    private void lancer50Parties() {
+        int winJ1 = 0, winJ2 = 0;
+
+        for (int i = 0; i < 50; i++) {
+            Awale a = new Awale();
+            a.initialiserPlateau();
+            Joueur p1 = new Joueur("J1", true, stratJ1);
+            Joueur p2 = new Joueur("J2", false, stratJ2);
+            boolean tour = true;
+
+            while (!a.finpartie(p1, p2, tour)) {
+                Joueur j = tour ? p1 : p2;
+                Strategie s = j.getStrategie();
+                if (s == null) break;
+                int coup = s.choisirCoup(tour, a.plateau);
+                int cap = a.jouercoup(coup, tour);
+                j.ajouterScore(cap);
+                tour = !tour;
+            }
+
+            if (p1.getScore() > p2.getScore()) winJ1++;
+            else winJ2++;
+        }
+
+        JOptionPane.showMessageDialog(frame,
+                "Résultats sur 50 parties :\nJoueur 1 : " + winJ1 + "\nJoueur 2 : " + winJ2);
+
+        afficherMenuMode();
+    }
+
+    /* =========================
+       ÉCRAN 3 : JEU
+       ========================= */
+    private void afficherJeu() {
+        jeu = new Awale();
+        jeu.initialiserPlateau();
+        j1 = new Joueur("J1", true, stratJ1);
+        j2 = new Joueur("J2", false, stratJ2);
+        tourJ1 = true;
+
+        JPanel panel = new JPanel(new BorderLayout());
+
+        lblScore = new JLabel("", SwingConstants.CENTER);
+        panel.add(lblScore, BorderLayout.NORTH);
+
+        JPanel plateau = new JPanel(new GridLayout(2, 6));
+        trous = new JButton[12];
+
+        for (int i = 0; i < 12; i++) {
+            int idx = i;
+            trous[i] = new JButton();
+            trous[i].addActionListener(e -> jouerCoupHumain(idx));
+            plateau.add(trous[i]);
+        }
+
+        panel.add(plateau, BorderLayout.CENTER);
+        frame.setContentPane(panel);
+        frame.revalidate();
+
+        rafraichir();
+        jouerIA();
+    }
+
+    private void jouerCoupHumain(int trou) {
+        Joueur joueur = tourJ1 ? j1 : j2;
+        if (joueur.getStrategie() != null) return;
+        if (!Awale.coupvalide(trou, tourJ1, jeu.plateau)) return;
+
+        int cap = jeu.jouercoup(trou, tourJ1);
+        joueur.ajouterScore(cap);
+        tourJ1 = !tourJ1;
+        rafraichir();
+        jouerIA();
+    }
+
+    private void jouerIA() {
+        Joueur joueur = tourJ1 ? j1 : j2;
+        if (joueur.getStrategie() == null) return;
+
+        int coup = joueur.getStrategie().choisirCoup(
+                tourJ1,
+                jeu.plateau
+        );
+        int cap = jeu.jouercoup(coup, tourJ1);
+        joueur.ajouterScore(cap);
+        tourJ1 = !tourJ1;
+        rafraichir();
+        jouerIA();
+    }
+
+    private void rafraichir() {
+        for (int i = 0; i < 12; i++) {
+            trous[i].setText("" + jeu.plateau[i]);
+        }
+        lblScore.setText("J1 : " + j1.getScore() + " | J2 : " + j2.getScore());
+    }
+}
