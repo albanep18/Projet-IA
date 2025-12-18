@@ -38,7 +38,7 @@ java awale.Main
 
 Limites et améliorations:
 
-MCTS beaucoup trop couteux en temps de calcul ce qui le rend peu utilisable
+MCTS beaucoup trop couteux en temps de calcul ce qui le rend peu utilisable.
 Les heuristiques ont une vision à court terme et ne prennent pas en compte les coups de l’adversaire.
 Les simulations MCTS sont aléatoires et peuvent nécessiter un grand nombre d’itérations.
 Des améliorations possibles incluent l’intégration d’heuristiques dans MCTS et l’adaptation dynamique du nombre d’itérations.
