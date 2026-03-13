@@ -110,7 +110,6 @@ java awale.Main
 
 Projet réalisé par :
 
-* Pierre-Léo Ducruet  
 * Maëlle Guibert  
 * Joyce Lama Adodo  
 * Albane Perrier
