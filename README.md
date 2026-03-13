@@ -85,6 +85,7 @@ Cette approche permet d’obtenir des décisions plus robustes mais **nécessite
 ### Compilation
 ```bash
 javac awale/*.java
+```
 
 ## 📉 Limites et améliorations
 
